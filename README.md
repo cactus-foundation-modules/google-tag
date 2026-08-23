@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="module-art.webp" alt="Google Tag" width="640" />
+</p>
+
 # Google Tag
 
 Puts the Google tag on a Cactus site so Google Analytics and Google Ads can tell
