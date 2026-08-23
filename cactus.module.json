@@ -1,0 +1,47 @@
+{
+  "name": "google-tag",
+  "version": "0.1.0",
+  "tablePrefix": "gt_",
+  "description": "Measures what your site is actually achieving. Puts the Google tag on every page for Google Analytics, Google Ads, or both, tells Google when an order is placed and what it was worth, and does the whole thing through your cookie banner so nobody is tracked who did not agree to it.",
+  "requiresCoreVersion": "0.5.1223",
+  "permissions": [
+    "googletag.manage"
+  ],
+  "cookieCategories": [
+    {
+      "key": "analytics",
+      "label": "Analytics",
+      "description": "Lets us count visits and see which pages people use, so we can make the site better. No adverts come from this."
+    },
+    {
+      "key": "marketing",
+      "label": "Marketing",
+      "description": "Lets us measure which adverts led to an order, and show you relevant adverts on other sites."
+    }
+  ],
+  "settingsTabs": [
+    {
+      "id": "google-tag",
+      "label": "Google Tag",
+      "permission": "googletag.manage",
+      "import": "./components/SettingsTab",
+      "component": "GoogleTagSettingsTab"
+    }
+  ],
+  "puckBlocks": [
+    {
+      "type": "GoogleTag",
+      "import": "./components/GoogleTagBlock",
+      "rscImport": "./components/GoogleTagBlock.rsc",
+      "component": "googleTagBlockComponent",
+      "rscComponent": "googleTagBlockRscComponent",
+      "layoutTypes": [
+        "header",
+        "footer"
+      ]
+    }
+  ],
+  "teardown": [
+    "gt_settings"
+  ]
+}
