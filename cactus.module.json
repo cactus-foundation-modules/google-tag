@@ -1,6 +1,6 @@
 {
   "name": "google-tag",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "tablePrefix": "gt_",
   "description": "Measures what your site is actually achieving. Puts the Google tag on every page for Google Analytics, Google Ads, or both, tells Google when an order is placed and what it was worth, and does the whole thing through your cookie banner so nobody is tracked who did not agree to it.",
   "requiresCoreVersion": "0.5.1234",
@@ -33,7 +33,8 @@
       "https://googleads.g.doubleclick.net",
       "https://stats.g.doubleclick.net",
       "https://www.googleadservices.com",
-      "https://ad.doubleclick.net"
+      "https://ad.doubleclick.net",
+      "https://pagead2.googlesyndication.com"
     ],
     "connect": [
       "https://www.googletagmanager.com",
@@ -45,7 +46,8 @@
       "https://www.google.com",
       "https://www.googleadservices.com",
       "https://td.doubleclick.net",
-      "https://ad.doubleclick.net"
+      "https://ad.doubleclick.net",
+      "https://pagead2.googlesyndication.com"
     ],
     "frame": [
       "https://www.googletagmanager.com",
