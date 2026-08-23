@@ -54,7 +54,7 @@ function advice(saved: Settings): Array<{ tone: 'warning' | 'danger' | 'info'; t
   if (saved.enabled && hasAds && !saved.adsPurchaseLabel) {
     notes.push({
       tone: 'warning',
-      text: 'Google Ads knows which account to look at but not which conversion to count, so your orders will not show up against your adverts. Add the conversion label from the same screen in Google Ads where you found the conversion ID.',
+      text: 'Google Ads knows which account to look at but not which conversion to count, so your orders will not show up against your adverts. The label is not in the tag Google shows you first - find it on the conversion action itself, under Tag setup.',
     })
   }
 
@@ -202,8 +202,8 @@ export function GoogleTagSettingsTab() {
           onChange={(e) => set('adsConversionId', e.target.value)}
         />
         <p className="field-hint">
-          In Google Ads, under Goals, Conversions, your purchase action. Paste the whole thing if it
-          is easier - the two halves are pulled apart for you.
+          In Google Ads, under Goals, Conversions, your purchase action. Paste the whole snippet
+          Google gives you if that is easier - the ID is picked out of it for you.
         </p>
       </div>
 
@@ -216,8 +216,11 @@ export function GoogleTagSettingsTab() {
           onChange={(e) => set('adsPurchaseLabel', e.target.value)}
         />
         <p className="field-hint">
-          The second half of the pair, from the same screen. This is what tells Google Ads that the
-          thing it is being told about is a sale.
+          This is what tells Google Ads that the thing it is being told about is a sale.{' '}
+          <strong>It is not in the tag Google shows you first.</strong> That one carries the account
+          and nothing else. The label lives on the conversion action&rsquo;s own screen, under Tag
+          setup - either as a field called Conversion label, or as the part after the slash in the
+          second snippet. Paste that whole snippet in here if it is easier.
         </p>
       </div>
 

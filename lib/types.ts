@@ -64,20 +64,43 @@ export function normaliseGa4Id(raw: string | null | undefined): string | null {
   return /^G-[A-Z0-9]{4,20}$/.test(value) ? value : null
 }
 
-/** A Google Ads conversion ID, "AW-123456789". Owners often paste the whole
- *  snippet or the ID/label pair together, so the ID is pulled out of whatever
- *  arrives rather than rejected wholesale. */
+/** A Google Ads conversion ID, "AW-123456789". Found anywhere in whatever was
+ *  pasted, because what Google actually hands an owner is a block of JavaScript
+ *  and telling them to pick the right eleven characters out of it is a poor use
+ *  of anybody's afternoon. */
 export function normaliseAdsId(raw: string | null | undefined): string | null {
-  const value = (raw ?? '').trim().toUpperCase().replace(/\s+/g, '')
-  const match = value.match(/AW-\d{6,15}/)
+  const match = (raw ?? '').toUpperCase().match(/AW-\d{6,15}/)
   return match ? match[0] : null
 }
 
-/** The conversion label half of an Ads conversion action. Google writes the pair
- *  as "AW-123456789/abcDEF_gh12"; paste either the label alone or the whole
- *  thing and the label is what is kept. */
+// A conversion label as Google writes it: letters, digits, hyphens and
+// underscores. Case matters - the label is not an identifier to be tidied up,
+// it is a key Google compares exactly, so nothing here changes its case.
+const LABEL = '[A-Za-z0-9_-]{5,40}'
+
+/**
+ * The conversion label half of an Ads conversion action.
+ *
+ * Google gives an owner two separate things on two separate screens and calls
+ * both of them "the tag", so what arrives in this box could be any of: the
+ * label on its own, the `AW-123456789/abcDEF_gh12` pair, or - most likely,
+ * because it is what the Ads screen offers as copyable text - the entire event
+ * snippet, quotes, commas, line breaks and all. All three are accepted. The
+ * base tag, which carries no label at all, is correctly rejected: that is the
+ * snippet an owner reaches for first, and reporting it as "not set" is the only
+ * honest answer.
+ */
 export function normaliseAdsLabel(raw: string | null | undefined): string | null {
-  const value = (raw ?? '').trim().replace(/\s+/g, '')
-  const afterSlash = value.includes('/') ? value.slice(value.lastIndexOf('/') + 1) : value
-  return /^[A-Za-z0-9_-]{5,40}$/.test(afterSlash) ? afterSlash : null
+  const text = raw ?? ''
+  // A pasted snippet: take the label out of send_to's ID/label pair, which is
+  // the one place in it that a label is unambiguously a label.
+  const fromSendTo = text.match(new RegExp(`AW-\\d{6,15}/(${LABEL})`, 'i'))
+  if (fromSendTo?.[1]) return fromSendTo[1]
+
+  // Otherwise treat it as the label itself, give or take the punctuation a copy
+  // and paste drags along with it.
+  const value = text.trim().replace(/\s+/g, '')
+  const tail = value.includes('/') ? value.slice(value.lastIndexOf('/') + 1) : value
+  const cleaned = tail.replace(/^['"`]+/, '').replace(/['"`,;]+$/, '')
+  return new RegExp(`^${LABEL}$`).test(cleaned) ? cleaned : null
 }

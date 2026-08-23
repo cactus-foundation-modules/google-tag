@@ -1,6 +1,6 @@
 {
   "name": "google-tag",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "tablePrefix": "gt_",
   "description": "Measures what your site is actually achieving. Puts the Google tag on every page for Google Analytics, Google Ads, or both, tells Google when an order is placed and what it was worth, and does the whole thing through your cookie banner so nobody is tracked who did not agree to it.",
   "requiresCoreVersion": "0.5.1223",
