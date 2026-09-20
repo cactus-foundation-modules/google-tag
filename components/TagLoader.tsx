@@ -4,6 +4,7 @@ import { useEffect, useRef, useSyncExternalStore } from 'react'
 import { usePathname } from 'next/navigation'
 import { onConversion, type Conversion } from '@/lib/analytics/conversion'
 import {
+  adsConversionValue,
   ANALYTICS_CATEGORY,
   CONSENT_CHANGE_EVENT,
   MARKETING_CATEGORY,
@@ -102,7 +103,7 @@ function consentPayload(analyticsOk: boolean, adsOk: boolean): Record<string, st
 }
 
 export function TagLoader({ config }: { config: TagConfig }) {
-  const { ga4Id, adsId, adsPurchaseLabel, trackPageViews, loadBeforeConsent, gate } = config
+  const { ga4Id, adsId, adsPurchaseLabel, trackPageViews, loadBeforeConsent, adsConversionValueBasis, gate } = config
 
   const snapshot = useSyncExternalStore(subscribeConsent, consentSnapshot, serverSnapshot)
   // 'allowed' means the site's banner has no switch for this, so there is
@@ -194,11 +195,13 @@ export function TagLoader({ config }: { config: TagConfig }) {
   const ga4Ref = useRef(ga4Id)
   const adsRef = useRef(adsId)
   const labelRef = useRef(adsPurchaseLabel)
+  const basisRef = useRef(adsConversionValueBasis)
   useEffect(() => {
     ga4Ref.current = ga4Id
     adsRef.current = adsId
     labelRef.current = adsPurchaseLabel
-  }, [ga4Id, adsId, adsPurchaseLabel])
+    basisRef.current = adsConversionValueBasis
+  }, [ga4Id, adsId, adsPurchaseLabel, adsConversionValueBasis])
 
   useEffect(() => {
     const w = tagWindow()
@@ -234,10 +237,15 @@ export function TagLoader({ config }: { config: TagConfig }) {
       // label there is nothing to count the sale against, so nothing is sent -
       // an unlabelled conversion is discarded at Google's end anyway.
       if (adsRef.current && labelRef.current) {
+        // Ads is the one place the basis applies. It is measuring return on ad
+        // spend, so the figure it needs is the revenue the shop actually books -
+        // which for a site quoting prices ex VAT is not the total on the order.
+        // GA4 above is left exactly as it is: it already has tax and shipping as
+        // their own parameters and does this arithmetic itself.
         gtag('event', 'conversion', {
           send_to: `${adsRef.current}/${labelRef.current}`,
           transaction_id: c.transactionId,
-          value: c.value,
+          value: adsConversionValue(c, basisRef.current),
           currency: c.currency,
         })
       }

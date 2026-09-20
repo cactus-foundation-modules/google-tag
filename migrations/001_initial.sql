@@ -25,8 +25,16 @@ CREATE TABLE IF NOT EXISTS "gt_settings" (
     -- gives better numbers; the first is the one that needs no explaining to a
     -- regulator. The owner chooses.
     "load_before_consent" BOOLEAN NOT NULL DEFAULT false,
+    -- What figure the Google Ads conversion is worth: the order total as the
+    -- shopper paid it, or that total with the tax (and optionally the delivery)
+    -- taken back off. A shop quoting prices ex VAT wants one of the latter two,
+    -- or every ROAS figure in the account is overstated by the VAT rate. The
+    -- default reports the total, which is what this module has always done.
+    "ads_conversion_value_basis" TEXT NOT NULL DEFAULT 'ORDER_TOTAL',
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "gt_settings_pkey" PRIMARY KEY ("id"),
-    CONSTRAINT "gt_settings_singleton_check" CHECK ("id" = 'singleton')
+    CONSTRAINT "gt_settings_singleton_check" CHECK ("id" = 'singleton'),
+    CONSTRAINT "gt_settings_ads_value_basis_check"
+        CHECK ("ads_conversion_value_basis" IN ('ORDER_TOTAL', 'EXCLUDING_TAX', 'EXCLUDING_TAX_AND_SHIPPING'))
 );
 INSERT INTO "gt_settings" ("id") VALUES ('singleton') ON CONFLICT DO NOTHING;

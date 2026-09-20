@@ -25,6 +25,7 @@ async function GoogleTagRsc() {
         adsPurchaseLabel: settings.adsPurchaseLabel,
         trackPageViews: settings.trackPageViews,
         loadBeforeConsent: settings.loadBeforeConsent,
+        adsConversionValueBasis: settings.adsConversionValueBasis,
         gate,
       }}
     />

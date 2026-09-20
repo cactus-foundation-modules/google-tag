@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { normaliseAdsId, normaliseAdsLabel, normaliseGa4Id } from './types'
+import {
+  adsConversionValue,
+  normaliseAdsConversionValueBasis,
+  normaliseAdsId,
+  normaliseAdsLabel,
+  normaliseGa4Id,
+} from './types'
 
 // Google hands an owner two different snippets on two different screens and
 // calls both of them "the tag". Whatever they paste, these three decide what
@@ -91,5 +97,81 @@ describe('normaliseGa4Id', () => {
 
   it('rejects an Ads ID in the Analytics box', () => {
     expect(normaliseGa4Id('AW-18406636221')).toBeNull()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// The Ads conversion value.
+//
+// Deskwell, 19 September 2026: order DW000192 was GBP 2,300.00 ex VAT and Ads
+// recorded GBP 2,760.00. On a 5.66% margin the account was measuring break-even
+// ROAS as 21.2x when the real figure is 17.7x, so a target set from it bid 20%
+// looser than intended. Nothing anywhere said so. These tests are the guard.
+// ---------------------------------------------------------------------------
+
+describe('normaliseAdsConversionValueBasis', () => {
+  it('keeps each of the three bases', () => {
+    expect(normaliseAdsConversionValueBasis('ORDER_TOTAL')).toBe('ORDER_TOTAL')
+    expect(normaliseAdsConversionValueBasis('EXCLUDING_TAX')).toBe('EXCLUDING_TAX')
+    expect(normaliseAdsConversionValueBasis('EXCLUDING_TAX_AND_SHIPPING')).toBe('EXCLUDING_TAX_AND_SHIPPING')
+  })
+
+  it('tidies case and stray whitespace, which is what a hand-edited row looks like', () => {
+    expect(normaliseAdsConversionValueBasis('  excluding_tax  ')).toBe('EXCLUDING_TAX')
+  })
+
+  it('falls back to the order total for anything it does not recognise', () => {
+    expect(normaliseAdsConversionValueBasis('EX_VAT')).toBe('ORDER_TOTAL')
+    expect(normaliseAdsConversionValueBasis('')).toBe('ORDER_TOTAL')
+    expect(normaliseAdsConversionValueBasis(null)).toBe('ORDER_TOTAL')
+    expect(normaliseAdsConversionValueBasis(undefined)).toBe('ORDER_TOTAL')
+  })
+})
+
+describe('adsConversionValue', () => {
+  // The real order, at 20% VAT with delivery inside the total.
+  const ORDER = { value: 2760, tax: 460, shipping: 120 }
+
+  it('sends the total untouched on the default, which is what an existing shop keeps doing', () => {
+    expect(adsConversionValue(ORDER, 'ORDER_TOTAL')).toBe(2760)
+  })
+
+  it('takes the tax off', () => {
+    expect(adsConversionValue(ORDER, 'EXCLUDING_TAX')).toBe(2300)
+  })
+
+  it('takes the tax and the delivery off', () => {
+    expect(adsConversionValue(ORDER, 'EXCLUDING_TAX_AND_SHIPPING')).toBe(2180)
+  })
+
+  it('treats a missing tax as no tax rather than as nothing at all', () => {
+    expect(adsConversionValue({ value: 99.99 }, 'EXCLUDING_TAX')).toBe(99.99)
+    expect(adsConversionValue({ value: 99.99, shipping: 9.99 }, 'EXCLUDING_TAX')).toBe(99.99)
+  })
+
+  it('treats a missing shipping the same way', () => {
+    expect(adsConversionValue({ value: 120, tax: 20 }, 'EXCLUDING_TAX_AND_SHIPPING')).toBe(100)
+  })
+
+  it('rounds the float error out of the subtraction', () => {
+    // 2760.35 - 460.06 is 2300.2899999999995 in binary floating point, and that
+    // is not a price anybody should be sending anywhere.
+    expect(adsConversionValue({ value: 2760.35, tax: 460.06 }, 'EXCLUDING_TAX')).toBe(2300.29)
+  })
+
+  it('clamps at zero, because Google rejects a negative and the sale would be lost', () => {
+    // A fully discounted order where the delivery is all that is left.
+    expect(adsConversionValue({ value: 24, tax: 4, shipping: 40 }, 'EXCLUDING_TAX_AND_SHIPPING')).toBe(0)
+  })
+
+  it('never produces NaN from a conversion with no money on it', () => {
+    expect(adsConversionValue({}, 'EXCLUDING_TAX')).toBeUndefined()
+    expect(adsConversionValue({ tax: 10 }, 'EXCLUDING_TAX_AND_SHIPPING')).toBeUndefined()
+    expect(adsConversionValue({ value: Number.NaN, tax: 10 }, 'EXCLUDING_TAX')).toBeUndefined()
+  })
+
+  it('sends a genuine zero as zero', () => {
+    expect(adsConversionValue({ value: 0 }, 'ORDER_TOTAL')).toBe(0)
+    expect(adsConversionValue({ value: 0 }, 'EXCLUDING_TAX')).toBe(0)
   })
 })

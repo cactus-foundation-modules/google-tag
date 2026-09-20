@@ -1,6 +1,11 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import {
+  ADS_CONVERSION_VALUE_BASES,
+  normaliseAdsConversionValueBasis,
+  type AdsConversionValueBasis,
+} from '@/modules/google-tag/lib/types'
 
 const API_BASE = '/api/m/google-tag'
 
@@ -17,11 +22,12 @@ type Settings = {
   adsPurchaseLabel: string
   trackPageViews: boolean
   loadBeforeConsent: boolean
+  adsConversionValueBasis: AdsConversionValueBasis
   banner: Banner
   adminPath: string
 }
 
-type Draft = Pick<Settings, 'enabled' | 'ga4MeasurementId' | 'adsConversionId' | 'adsPurchaseLabel' | 'trackPageViews' | 'loadBeforeConsent'>
+type Draft = Pick<Settings, 'enabled' | 'ga4MeasurementId' | 'adsConversionId' | 'adsPurchaseLabel' | 'trackPageViews' | 'loadBeforeConsent' | 'adsConversionValueBasis'>
 
 function draftOf(s: Settings): Draft {
   return {
@@ -31,7 +37,17 @@ function draftOf(s: Settings): Draft {
     adsPurchaseLabel: s.adsPurchaseLabel,
     trackPageViews: s.trackPageViews,
     loadBeforeConsent: s.loadBeforeConsent,
+    adsConversionValueBasis: s.adsConversionValueBasis,
   }
+}
+
+// What each basis is called on the page. Written for someone who runs a shop
+// rather than someone who runs an ad account: the wording says what figure ends
+// up in Google, not what it is subtracted from.
+const BASIS_LABELS: Record<AdsConversionValueBasis, string> = {
+  ORDER_TOTAL: 'The full order total, as the customer paid it',
+  EXCLUDING_TAX: 'The order total without VAT',
+  EXCLUDING_TAX_AND_SHIPPING: 'The order total without VAT or delivery',
 }
 
 // Everything the owner ought to know before they trust the numbers, worked out
@@ -221,6 +237,29 @@ export function GoogleTagSettingsTab() {
           and nothing else. The label lives on the conversion action&rsquo;s own screen, under Tag
           setup - either as a field called Conversion label, or as the part after the slash in the
           second snippet. Paste that whole snippet in here if it is easier.
+        </p>
+      </div>
+
+      <div className="field">
+        <label>What a sale is worth to Google Ads</label>
+        <select
+          value={draft.adsConversionValueBasis}
+          onChange={(e) => set('adsConversionValueBasis', normaliseAdsConversionValueBasis(e.target.value))}
+        >
+          {ADS_CONVERSION_VALUE_BASES.map((basis) => (
+            <option key={basis} value={basis}>{BASIS_LABELS[basis]}</option>
+          ))}
+        </select>
+        <p className="field-hint">
+          Only affects Google Ads. If you quote your prices without VAT, the full order total is
+          more than you ever bank, so every return-on-spend figure in your Ads account comes out
+          higher than it really is - and if you have set a target for Ads to bid towards, it is
+          quietly bidding looser than you told it to. Shops that sell without VAT usually want{' '}
+          <strong>without VAT</strong> here. Google Analytics is left alone either way, because its
+          reports expect the whole total and already show you the tax separately.{' '}
+          <strong>Changing this is a fresh start, not a correction:</strong> orders already counted
+          keep the figure they were counted at, so your reports will have a step in them on the day
+          you switch.
         </p>
       </div>
 

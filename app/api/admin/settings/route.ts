@@ -6,6 +6,7 @@ import { hasPermission } from '@/lib/permissions/check'
 import { errorResponse } from '@/lib/utils'
 import { prisma } from '@/lib/db/prisma'
 import { getBannerState, getGoogleTagSettings, updateGoogleTagSettings } from '@/modules/google-tag/lib/settings'
+import { ADS_CONVERSION_VALUE_BASES } from '@/modules/google-tag/lib/types'
 
 async function view() {
   const [settings, banner, config] = await Promise.all([
@@ -44,6 +45,9 @@ const Body = z.object({
   adsPurchaseLabel: z.string().max(120).optional(),
   trackPageViews: z.boolean().optional(),
   loadBeforeConsent: z.boolean().optional(),
+  // A closed set rather than a free string: it is a menu with three entries, so
+  // a fourth value is a bug in the caller and worth saying so about.
+  adsConversionValueBasis: z.enum(ADS_CONVERSION_VALUE_BASES).optional(),
 })
 
 export async function PATCH(request: NextRequest) {

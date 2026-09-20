@@ -2,9 +2,11 @@ import { prisma } from '@/lib/db/prisma'
 import {
   ANALYTICS_CATEGORY,
   MARKETING_CATEGORY,
+  normaliseAdsConversionValueBasis,
   normaliseAdsId,
   normaliseAdsLabel,
   normaliseGa4Id,
+  type AdsConversionValueBasis,
   type BannerState,
   type ConsentGate,
   type GoogleTagSettings,
@@ -17,6 +19,7 @@ type SettingsRow = {
   ads_purchase_label: string | null
   track_page_views: boolean
   load_before_consent: boolean
+  ads_conversion_value_basis: string | null
 }
 
 const BLANK: GoogleTagSettings = {
@@ -26,12 +29,13 @@ const BLANK: GoogleTagSettings = {
   adsPurchaseLabel: null,
   trackPageViews: true,
   loadBeforeConsent: false,
+  adsConversionValueBasis: 'ORDER_TOTAL',
 }
 
 export async function getGoogleTagSettings(): Promise<GoogleTagSettings> {
   const rows = await prisma.$queryRaw<SettingsRow[]>`
     SELECT "enabled", "ga4_measurement_id", "ads_conversion_id", "ads_purchase_label",
-           "track_page_views", "load_before_consent"
+           "track_page_views", "load_before_consent", "ads_conversion_value_basis"
     FROM "gt_settings" WHERE "id" = 'singleton'
   `.catch(() => [] as SettingsRow[])
   const row = rows[0]
@@ -48,6 +52,7 @@ export async function getGoogleTagSettings(): Promise<GoogleTagSettings> {
     adsPurchaseLabel: normaliseAdsLabel(row.ads_purchase_label),
     trackPageViews: row.track_page_views,
     loadBeforeConsent: row.load_before_consent,
+    adsConversionValueBasis: normaliseAdsConversionValueBasis(row.ads_conversion_value_basis),
   }
 }
 
@@ -58,6 +63,7 @@ export async function updateGoogleTagSettings(patch: {
   adsPurchaseLabel?: string
   trackPageViews?: boolean
   loadBeforeConsent?: boolean
+  adsConversionValueBasis?: AdsConversionValueBasis | string
 }): Promise<void> {
   if (patch.enabled !== undefined) {
     await prisma.$executeRaw`UPDATE "gt_settings" SET "enabled" = ${patch.enabled}, "updated_at" = CURRENT_TIMESTAMP WHERE "id" = 'singleton'`
@@ -79,6 +85,13 @@ export async function updateGoogleTagSettings(patch: {
   }
   if (patch.loadBeforeConsent !== undefined) {
     await prisma.$executeRaw`UPDATE "gt_settings" SET "load_before_consent" = ${patch.loadBeforeConsent}, "updated_at" = CURRENT_TIMESTAMP WHERE "id" = 'singleton'`
+  }
+  if (patch.adsConversionValueBasis !== undefined) {
+    // Normalised rather than trusted: the column carries a CHECK constraint, and
+    // an unrecognised basis arriving here should save as the default instead of
+    // failing the whole save with a database error nobody can act on.
+    const value = normaliseAdsConversionValueBasis(patch.adsConversionValueBasis)
+    await prisma.$executeRaw`UPDATE "gt_settings" SET "ads_conversion_value_basis" = ${value}, "updated_at" = CURRENT_TIMESTAMP WHERE "id" = 'singleton'`
   }
 }
 
