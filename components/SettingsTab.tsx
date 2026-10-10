@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { SettingsHeaderActions, SettingsHeaderStatus } from '@/components/admin/SettingsHeaderActions'
+import { InfoTip } from '@/components/admin/InfoTip'
 import {
   ADS_CONVERSION_VALUE_BASES,
   normaliseAdsConversionValueBasis,
@@ -94,7 +95,7 @@ function advice(saved: Settings): Array<{ tone: 'warning' | 'danger' | 'info'; t
   if (missing.length > 0) {
     notes.push({
       tone: 'danger',
-      text: `Your cookie banner asks about cookies but has no ${missing.join(' or ')} switch on it, so there is nothing for a visitor to agree to and this runs for all of them regardless. Add the missing ${missing.length > 1 ? 'categories' : 'category'} on the Privacy tab - the module offers them as a one-click suggestion there.`,
+      text: `Your cookie banner asks about cookies but has no ${missing.join(' or ')} switch on it, so there is nothing for a visitor to agree to and this runs for all of them regardless. Add the missing ${missing.length > 1 ? 'categories' : 'category'} on Settings > General > GDPR & Legal - the module offers them as a one-click suggestion there.`,
     })
   } else {
     notes.push({
@@ -172,11 +173,10 @@ export function GoogleTagSettingsTab() {
 
   return (
     <div>
-      <p className="field-hint" style={{ marginBottom: '1.25rem' }}>
-        Puts the Google tag on your site so Google Analytics and Google Ads can tell you what your
-        visitors did, and tells them what an order was worth when one is placed. You will need the
-        <strong> Google Tag</strong> block on your header layout for any of it to appear - it shows
-        nothing on the page, it just does the counting.
+      <p className="field-hint" style={{ marginBottom: '1rem' }}>
+        Adds the Google tag so Analytics and Ads can see what visitors do and what each order was worth.
+        It needs the <strong>Google Tag</strong> block on your header layout, where it shows nothing - it
+        just does the counting.
       </p>
 
       {notes.map((note, i) => (
@@ -185,7 +185,7 @@ export function GoogleTagSettingsTab() {
           {note.tone === 'danger' && (
             <>
               {' '}
-              <a href={`/${saved.adminPath}/config?tab=gdpr#gdpr-banner`}>Open the Privacy settings</a>.
+              <a href={`/${saved.adminPath}/config?tab=gdpr#gdpr-banner`}>Open GDPR &amp; Legal</a>.
             </>
           )}
         </div>
@@ -198,13 +198,15 @@ export function GoogleTagSettingsTab() {
         </button>
       </SettingsHeaderActions>
 
-      <div className="settings-masonry">
+      <div className="settings-cols">
         <div className="card">
-          <h3 style={{ fontSize: '0.9375rem', margin: '0 0 0.75rem' }}>Google Analytics</h3>
-      <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '1.25rem', cursor: 'pointer' }}>
-        <input type="checkbox" checked={draft.enabled} onChange={(e) => set('enabled', e.target.checked)} />
-        <span>Send measurements to Google</span>
-      </label>
+          <div className="card-title">Google Analytics and consent</div>
+      <div className="field field--beside-input">
+        <label className="settings-check">
+          <input type="checkbox" checked={draft.enabled} onChange={(e) => set('enabled', e.target.checked)} />
+          <span>Send measurements to Google</span>
+        </label>
+      </div>
 
       <div className="field">
         <label>Google Analytics measurement ID</label>
@@ -215,19 +217,37 @@ export function GoogleTagSettingsTab() {
           onChange={(e) => set('ga4MeasurementId', e.target.value)}
         />
         <p className="field-hint">
-          In Google Analytics, under Admin, Data streams, your website. Leave it empty if you only
-          want to measure adverts.
+          In Analytics: Admin, Data streams, your website. Leave it empty to measure adverts only.
         </p>
       </div>
 
-      <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.75rem', cursor: 'pointer' }}>
-        <input type="checkbox" checked={draft.trackPageViews} onChange={(e) => set('trackPageViews', e.target.checked)} />
-        <span>Count page views as well as orders</span>
+      <div className="field">
+        <label className="settings-check">
+          <input type="checkbox" checked={draft.trackPageViews} onChange={(e) => set('trackPageViews', e.target.checked)} />
+          <span>Count page views as well as orders</span>
+          <InfoTip>Untick to send orders only.</InfoTip>
+        </label>
+      </div>
+      <div className="field">
+      <label className="settings-check">
+        <input
+          type="checkbox"
+          checked={draft.loadBeforeConsent}
+          onChange={(e) => set('loadBeforeConsent', e.target.checked)}
+        />
+        <span>Let Google estimate the visitors who said no</span>
+        <InfoTip>
+          Off is the cautious setting: a visitor who has not agreed has no contact with Google at all.
+          On, Google loads straight away but may not store anything, so it can estimate the visits it
+          cannot measure. Better numbers, more to explain if anyone asks.
+        </InfoTip>
       </label>
+      </div>
+
 
         </div>
         <div className="card">
-          <h3 style={{ fontSize: '0.9375rem', margin: '0 0 0.75rem' }}>Google Ads</h3>
+          <div className="card-title">Google Ads</div>
       <div className="field">
         <label>Google Ads conversion ID</label>
         <input
@@ -237,30 +257,39 @@ export function GoogleTagSettingsTab() {
           onChange={(e) => set('adsConversionId', e.target.value)}
         />
         <p className="field-hint">
-          In Google Ads, under Goals, Conversions, your purchase action. Paste the whole snippet
-          Google gives you if that is easier - the ID is picked out of it for you.
+          In Ads: Goals, Conversions, your purchase action. Pasting the whole snippet works too.
         </p>
       </div>
 
       <div className="field">
-        <label>Google Ads conversion label</label>
+        <label>
+          Google Ads conversion label
+          <InfoTip>
+            Tells Google Ads that what it is being told about is a sale. It is not in the tag Google shows
+            you first, which only carries the account: it is on the conversion action&rsquo;s own screen,
+            under Tag setup - as Conversion label, or the part after the slash in the second snippet.
+            Pasting that snippet works too.
+          </InfoTip>
+        </label>
         <input
           type="text"
           value={draft.adsPurchaseLabel}
           placeholder="abcDE_fgHijklMN"
           onChange={(e) => set('adsPurchaseLabel', e.target.value)}
         />
-        <p className="field-hint">
-          This is what tells Google Ads that the thing it is being told about is a sale.{' '}
-          <strong>It is not in the tag Google shows you first.</strong> That one carries the account
-          and nothing else. The label lives on the conversion action&rsquo;s own screen, under Tag
-          setup - either as a field called Conversion label, or as the part after the slash in the
-          second snippet. Paste that whole snippet in here if it is easier.
-        </p>
+        <p className="field-hint">Not in the first tag Google shows you - it is under Tag setup.</p>
       </div>
 
       <div className="field">
-        <label>What a sale is worth to Google Ads</label>
+        <label>
+          What a sale is worth to Google Ads
+          <InfoTip>
+            Only affects Google Ads. If your prices exclude VAT, the full total is more than you bank, so
+            return on ad spend looks better than it is and target bidding runs looser than you asked.
+            Analytics always gets the full total. Changing this is a fresh start: orders already counted
+            keep the figure they had.
+          </InfoTip>
+        </label>
         <select
           value={draft.adsConversionValueBasis}
           onChange={(e) => set('adsConversionValueBasis', normaliseAdsConversionValueBasis(e.target.value))}
@@ -269,37 +298,8 @@ export function GoogleTagSettingsTab() {
             <option key={basis} value={basis}>{BASIS_LABELS[basis]}</option>
           ))}
         </select>
-        <p className="field-hint">
-          Only affects Google Ads. If you quote your prices without VAT, the full order total is
-          more than you ever bank, so every return-on-spend figure in your Ads account comes out
-          higher than it really is - and if you have set a target for Ads to bid towards, it is
-          quietly bidding looser than you told it to. Shops that sell without VAT usually want{' '}
-          <strong>without VAT</strong> here. Google Analytics is left alone either way, because its
-          reports expect the whole total and already show you the tax separately.{' '}
-          <strong>Changing this is a fresh start, not a correction:</strong> orders already counted
-          keep the figure they were counted at, so your reports will have a step in them on the day
-          you switch.
-        </p>
+        <p className="field-hint">Shops that sell without VAT usually want <strong>without VAT</strong>.</p>
       </div>
-
-        </div>
-        <div className="card">
-          <h3 style={{ fontSize: '0.9375rem', margin: '0 0 0.75rem' }}>Visitors who say no</h3>
-      <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', marginBottom: '0.5rem', cursor: 'pointer' }}>
-        <input
-          type="checkbox"
-          checked={draft.loadBeforeConsent}
-          style={{ marginTop: '0.25rem' }}
-          onChange={(e) => set('loadBeforeConsent', e.target.checked)}
-        />
-        <span>Let Google estimate the visitors who said no</span>
-      </label>
-      <p className="field-hint" style={{ marginBottom: '1.5rem' }}>
-        Off, which is the cautious setting: a visitor who has not agreed has no contact with Google
-        at all. On: Google is loaded straight away but told it may not store anything, which lets it
-        estimate the visits it is not allowed to measure. Better numbers, more to explain if anyone
-        ever asks.
-      </p>
 
         </div>
       </div>

@@ -53,7 +53,7 @@ default.
 
 ## Settings
 
-`Settings → Google Tag`, permission `googletag.manage`.
+`Settings → General → Google Tag`, permission `googletag.manage`.
 
 ## Tables
 
