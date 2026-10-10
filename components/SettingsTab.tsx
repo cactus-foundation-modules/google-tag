@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { SettingsHeaderActions, SettingsHeaderStatus } from '@/components/admin/SettingsHeaderActions'
 import {
   ADS_CONVERSION_VALUE_BASES,
   normaliseAdsConversionValueBasis,
@@ -190,6 +191,16 @@ export function GoogleTagSettingsTab() {
         </div>
       ))}
 
+      <SettingsHeaderActions>
+        <SettingsHeaderStatus message={msg} error={err} />
+        <button type="button" className="btn btn-primary" onClick={save} disabled={busy}>
+          {busy ? 'Saving…' : 'Save changes'}
+        </button>
+      </SettingsHeaderActions>
+
+      <div className="settings-masonry">
+        <div className="card">
+          <h3 style={{ fontSize: '0.9375rem', margin: '0 0 0.75rem' }}>Google Analytics</h3>
       <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '1.25rem', cursor: 'pointer' }}>
         <input type="checkbox" checked={draft.enabled} onChange={(e) => set('enabled', e.target.checked)} />
         <span>Send measurements to Google</span>
@@ -209,6 +220,14 @@ export function GoogleTagSettingsTab() {
         </p>
       </div>
 
+      <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.75rem', cursor: 'pointer' }}>
+        <input type="checkbox" checked={draft.trackPageViews} onChange={(e) => set('trackPageViews', e.target.checked)} />
+        <span>Count page views as well as orders</span>
+      </label>
+
+        </div>
+        <div className="card">
+          <h3 style={{ fontSize: '0.9375rem', margin: '0 0 0.75rem' }}>Google Ads</h3>
       <div className="field">
         <label>Google Ads conversion ID</label>
         <input
@@ -263,11 +282,9 @@ export function GoogleTagSettingsTab() {
         </p>
       </div>
 
-      <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.75rem', cursor: 'pointer' }}>
-        <input type="checkbox" checked={draft.trackPageViews} onChange={(e) => set('trackPageViews', e.target.checked)} />
-        <span>Count page views as well as orders</span>
-      </label>
-
+        </div>
+        <div className="card">
+          <h3 style={{ fontSize: '0.9375rem', margin: '0 0 0.75rem' }}>Visitors who say no</h3>
       <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', marginBottom: '0.5rem', cursor: 'pointer' }}>
         <input
           type="checkbox"
@@ -284,12 +301,8 @@ export function GoogleTagSettingsTab() {
         ever asks.
       </p>
 
-      {err && <div className="alert alert-error">{err}</div>}
-      {msg && <div className="alert alert-success">{msg}</div>}
-
-      <button type="button" className="btn btn-primary" onClick={save} disabled={busy}>
-        {busy ? 'Saving…' : 'Save'}
-      </button>
+        </div>
+      </div>
     </div>
   )
 }
